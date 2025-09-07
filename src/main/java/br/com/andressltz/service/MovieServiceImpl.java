@@ -55,10 +55,11 @@ public class MovieServiceImpl implements MovieService {
 			Integer maxInterval = null;
 			Integer yearMaxIntervalPrevious = null;
 			Integer yearMaxIntervalFollowing = null;
-			producer.getValue().sort(Integer::compareTo);
-
 			Integer previousWin = null;
+
 			int interval;
+
+			producer.getValue().sort(Integer::compareTo);
 			for (Integer year : producer.getValue()) {
 				if (previousWin == null) {
 					previousWin = year;
@@ -78,33 +79,27 @@ public class MovieServiceImpl implements MovieService {
 					yearMaxIntervalFollowing = year;
 				}
 			}
-			WinnerDto winnerMinInterval = WinnerDto.builder()
-					.producer(producer.getKey())
-					.previousWin(yearMinIntervalPrevious)
-					.followingWin(yearMinIntervalFollowing)
-					.interval(minInterval)
-					.build();
-			WinnerDto winnerMaxInterval = WinnerDto.builder()
-					.producer(producer.getKey())
-					.previousWin(yearMaxIntervalPrevious)
-					.followingWin(yearMaxIntervalFollowing)
-					.interval(maxInterval)
-					.build();
-			winnersMinInterval.add(winnerMinInterval);
-			winnersMaxInterval.add(winnerMaxInterval);
+
+			winnersMinInterval.add(populateWinner(producer.getKey(), yearMinIntervalPrevious, yearMinIntervalFollowing, minInterval));
+			winnersMaxInterval.add(populateWinner(producer.getKey(), yearMaxIntervalPrevious, yearMaxIntervalFollowing, maxInterval));
 		}
 
 		winnersMinInterval.sort(Comparator.comparing(WinnerDto::getInterval));
-		List<WinnerDto> winnersMinLimited = winnersMinInterval.subList(0, QTD_WINNERS);
-		winnersMinLimited.sort(Comparator.comparing(WinnerDto::getPreviousWin));
+		List<WinnerDto> winnersMinLimited = getFirstWinners(winnersMinInterval);
+		winnersMaxInterval.sort(Comparator.comparing(WinnerDto::getInterval).reversed());
+		List<WinnerDto> winnersMaxLimited = getFirstWinners(winnersMaxInterval);
 
-		winnersMaxInterval.sort(Comparator.comparing(WinnerDto::getInterval));
-		List<WinnerDto> winnersMaxLimited = winnersMaxInterval.subList(0, QTD_WINNERS);
-		winnersMaxLimited.sort(Comparator.comparing(WinnerDto::getPreviousWin));
+//		List<WinnerDto> winnersMaxLimited = limitWinners(winnersMaxInterval);
 
 		intervalDto.setMin(winnersMinLimited);
 		intervalDto.setMax(winnersMaxLimited);
 		return intervalDto;
+	}
+
+	private WinnerDto populateWinner(String producer, Integer yearMinIntervalPrevious, Integer yearMinIntervalFollowing, Integer minInterval) {
+		return WinnerDto.builder()
+				.producer(producer).previousWin(yearMinIntervalPrevious).followingWin(yearMinIntervalFollowing).interval(minInterval)
+				.build();
 	}
 
 	private Map<String, List<Integer>> filterProducers(List<ParticipationDto> participationList) {
@@ -112,11 +107,25 @@ public class MovieServiceImpl implements MovieService {
 		if (participationList != null && !participationList.isEmpty()) {
 			producerList = participationList.stream()
 					.collect(Collectors.groupingBy(ParticipationDto::getProducer, Collectors.mapping(ParticipationDto::getYear, Collectors.toList())))
-					.entrySet()
-					.stream()
+					.entrySet().stream()
 					.filter(entry -> entry.getValue().size() > 1)
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 		}
 		return producerList;
 	}
+
+	private List<WinnerDto> getFirstWinners(ArrayList<WinnerDto> winnersList) {
+		int interval = winnersList.stream().findFirst().get().getInterval();
+		return winnersList.stream().filter(winner -> winner.getInterval() == interval)
+				.sorted(Comparator.comparing(WinnerDto::getPreviousWin))
+				.collect(Collectors.toList());
+	}
+
+	private List<WinnerDto> limitWinners(ArrayList<WinnerDto> winnersList) {
+		winnersList.sort(Comparator.comparing(WinnerDto::getInterval));
+		List<WinnerDto> winnersLimited = winnersList.subList(0, QTD_WINNERS);
+		winnersLimited.sort(Comparator.comparing(WinnerDto::getPreviousWin));
+		return winnersLimited;
+	}
+
 }

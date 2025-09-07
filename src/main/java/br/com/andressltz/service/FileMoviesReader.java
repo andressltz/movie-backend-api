@@ -6,9 +6,9 @@ import java.io.IOException;
 
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import br.com.andressltz.model.Movie;
@@ -16,35 +16,35 @@ import br.com.andressltz.model.Movie;
 @Component
 public class FileMoviesReader implements ApplicationRunner {
 
-	private final String FILE_NAME = "src/main/resources/import/Movielist.csv";
-	private final String SPLITTER = ";";
-	private final Boolean HAS_HEADER = true;
+	@Value("${file.path:src/main/resources/import/}")
+	private String path;
+
+	@Value("${file.name:Movielist.csv}")
+	private String fileName;
+
+	@Value("${file.splitter:;}")
+	private String splitter;
+
+	@Value("${file.header:true}")
+	private Boolean hasHeader;
 
 	@Autowired
 	private MovieService movieService;
 
-//	@Override
-	public void run(String... args) {
-		try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
+	@Override
+	public void run(ApplicationArguments args) {
+		try (BufferedReader br = new BufferedReader(new FileReader(path + fileName))) {
 			String line;
-			if (HAS_HEADER) {
+			if (hasHeader) {
 				br.readLine();
 			}
 			while ((line = br.readLine()) != null) {
-				String[] movieLine = line.split(SPLITTER);
+				String[] movieLine = line.split(splitter);
 				saveMovie(convertLine(movieLine));
 			}
 		} catch (IOException ex) {
-			System.err.printf("Error reading file %s. Message: %s%n", FILE_NAME, ex.getMessage());
+			System.err.printf("Error reading file %s. Message: %s%n", path + fileName, ex.getMessage());
 		}
-	}
-
-	@Override
-	public void run(ApplicationArguments args) throws Exception {
-		System.out.println("Running application...");
-		System.out.println("Args: " + args.getSourceArgs());
-		run();
-		System.out.println("Application finished.");
 	}
 
 	private void saveMovie(Movie movie) {
