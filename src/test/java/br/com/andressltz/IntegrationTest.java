@@ -3,6 +3,7 @@ package br.com.andressltz;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 import br.com.andressltz.dto.IntervalDto;
 import br.com.andressltz.model.Movie;
+import br.com.andressltz.repository.MovieRepository;
 import br.com.andressltz.service.MovieService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,8 +34,24 @@ public class IntegrationTest {
 	@Autowired
 	private MovieService movieService;
 
+	@Autowired
+	private MovieRepository movieRepository;
+
 	@Test
-	public void shouldReadAndSaveMovieSuccess() {
+	public void shouldReadAndSaveMovieUsingRepositorySuccess() {
+		// Act
+		List<Movie> resultTrue = movieRepository.findMovieByWinnerIs(true);
+		List<Movie> resultNull = movieRepository.findMovieByWinnerIs(null);
+		List<Movie> resultFalse = movieRepository.findMovieByWinnerIs(false);
+
+		// Assert
+		assertFalse(resultTrue.isEmpty());
+		assertFalse(resultNull.isEmpty());
+		assertTrue(resultFalse.isEmpty());
+	}
+
+	@Test
+	public void shouldReadAndSaveMovieUsingServiceSuccess() {
 		// Act
 		List<Movie> result = movieService.getMovies();
 
