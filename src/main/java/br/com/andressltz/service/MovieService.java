@@ -7,7 +7,7 @@ import br.com.andressltz.model.Movie;
 
 public interface MovieService {
 
-	String getMovies();
+	List<Movie> getMovies();
 
 	Movie save(Movie movie);
 

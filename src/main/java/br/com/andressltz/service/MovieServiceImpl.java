@@ -26,8 +26,8 @@ public class MovieServiceImpl implements MovieService {
 	private final MovieRepository movieRepository;
 
 	@Override
-	public String getMovies() {
-		return movieRepository.findAll().toString();
+	public List<Movie> getMovies() {
+		return movieRepository.findAll();
 	}
 
 	@Override
@@ -42,8 +42,8 @@ public class MovieServiceImpl implements MovieService {
 
 	@Override
 	public IntervalDto getIntervalWin() {
-		//		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYearByWinnerIsTrue());
-		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYear());
+		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYearByWinnerIsTrue());
+//		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYear());
 		IntervalDto intervalDto = new IntervalDto(null, null);
 		ArrayList<WinnerDto> winnersMinInterval = new ArrayList<>();
 		ArrayList<WinnerDto> winnersMaxInterval = new ArrayList<>();
