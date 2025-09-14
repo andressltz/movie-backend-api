@@ -5,16 +5,21 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import org.apache.logging.log4j.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import br.com.andressltz.model.Movie;
+import br.com.andressltz.dto.MovieDto;
+import br.com.andressltz.model.ProducerYear;
 
 @Component
 public class FileMoviesReader implements ApplicationRunner {
+
+	private static final Logger logger = LoggerFactory.getLogger(FileMoviesReader.class);
 
 	@Value("${file.path:src/main/resources/import/}")
 	private String path;
@@ -29,7 +34,7 @@ public class FileMoviesReader implements ApplicationRunner {
 	private Boolean hasHeader;
 
 	@Autowired
-	private MovieService movieService;
+	private ProducerYearService producerYearService;
 
 	@Override
 	public void run(ApplicationArguments args) {
@@ -43,24 +48,32 @@ public class FileMoviesReader implements ApplicationRunner {
 				saveMovie(convertLine(movieLine));
 			}
 		} catch (IOException ex) {
-			System.err.printf("Error reading file %s. Message: %s%n", path + fileName, ex.getMessage());
+			logger.error("Error reading file {}. Message: {}", path + fileName, ex.getMessage());
 		}
 	}
 
-	private void saveMovie(Movie movie) {
+	private void saveMovie(MovieDto movie) {
 		if (movie != null) {
-			Movie saved = movieService.save(movie);
-			System.out.printf("Movie %s saved.%n", saved.getTitle());
+			String[] producers = movie.getProducers().split(", | and ");
+			for (String producer : producers) {
+				ProducerYear producerYear = populateProducerYear(producer, movie);
+				if (producerYear != null) {
+					ProducerYear saved = producerYearService.save(producerYear);
+					logger.info("Producer {} saved. Movie {}.", saved.getName(), movie.getTitle());
+				} else {
+					logger.error("Producer {} not saved. Movie {}.", producer, movie.getTitle());
+				}
+			}
 		}
 	}
 
-	private Movie convertLine(String[] movie) {
+	private MovieDto convertLine(String[] movie) {
 		if (movie != null) {
-			Movie m = new Movie();
-			m.setYear(movie[0]);
-			m.setTitle(movie[1]);
-			m.setStudios(movie[2]);
-			m.setProducers(movie[3]);
+			MovieDto dto = new MovieDto();
+			dto.setYear(movie[0]);
+			dto.setTitle(movie[1]);
+			dto.setStudios(movie[2]);
+			dto.setProducers(movie[3]);
 			Boolean winner = null;
 			if (movie.length > 4 && Strings.isNotBlank(movie[4])) {
 				if (movie[4].equalsIgnoreCase("yes")) {
@@ -69,8 +82,19 @@ public class FileMoviesReader implements ApplicationRunner {
 					winner = Boolean.valueOf(movie[4]);
 				}
 			}
-			m.setWinner(winner);
-			return m;
+			dto.setWinner(winner);
+			return dto;
+		}
+		return null;
+	}
+
+	private ProducerYear populateProducerYear(String producer, MovieDto movie) {
+		if (Strings.isNotEmpty(producer)) {
+			ProducerYear producerYear = new ProducerYear();
+			producerYear.setYear(movie.getYear());
+			producerYear.setName(producer.trim());
+			producerYear.setWinner(movie.getWinner());
+			return producerYear;
 		}
 		return null;
 	}

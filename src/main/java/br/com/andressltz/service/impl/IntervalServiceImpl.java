@@ -1,4 +1,4 @@
-package br.com.andressltz.service;
+package br.com.andressltz.service.impl;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -14,36 +14,18 @@ import lombok.AllArgsConstructor;
 import br.com.andressltz.dto.IntervalDto;
 import br.com.andressltz.dto.ParticipationDto;
 import br.com.andressltz.dto.WinnerDto;
-import br.com.andressltz.model.Movie;
-import br.com.andressltz.repository.MovieRepository;
+import br.com.andressltz.service.IntervalService;
+import br.com.andressltz.service.ProducerYearService;
 
 @Component
 @AllArgsConstructor
-public class MovieServiceImpl implements MovieService {
+public class IntervalServiceImpl implements IntervalService {
 
-	private static final int QTD_WINNERS = 2;
-
-	private final MovieRepository movieRepository;
-
-	@Override
-	public List<Movie> getMovies() {
-		return movieRepository.findAll();
-	}
-
-	@Override
-	public Movie save(Movie movie) {
-		return movieRepository.save(movie);
-	}
-
-	@Override
-	public List<Movie> findByWinner() {
-		return movieRepository.findMovieByWinnerIs(true);
-	}
+	private final ProducerYearService producerYearService;
 
 	@Override
 	public IntervalDto getIntervalWin() {
-		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYearByWinnerIsTrue());
-//		Map<String, List<Integer>> producerList = filterProducers(movieRepository.findProducersAndYear());
+		Map<String, List<Integer>> producerList = filterProducers(producerYearService.findProducersAndYearByWinnerIsTrue());
 		IntervalDto intervalDto = new IntervalDto(null, null);
 		ArrayList<WinnerDto> winnersMinInterval = new ArrayList<>();
 		ArrayList<WinnerDto> winnersMaxInterval = new ArrayList<>();
@@ -89,8 +71,6 @@ public class MovieServiceImpl implements MovieService {
 		winnersMaxInterval.sort(Comparator.comparing(WinnerDto::getInterval).reversed());
 		List<WinnerDto> winnersMaxLimited = getFirstWinners(winnersMaxInterval);
 
-//		List<WinnerDto> winnersMaxLimited = limitWinners(winnersMaxInterval);
-
 		intervalDto.setMin(winnersMinLimited);
 		intervalDto.setMax(winnersMaxLimited);
 		return intervalDto;
@@ -107,7 +87,8 @@ public class MovieServiceImpl implements MovieService {
 		if (participationList != null && !participationList.isEmpty()) {
 			producerList = participationList.stream()
 					.collect(Collectors.groupingBy(ParticipationDto::getProducer, Collectors.mapping(ParticipationDto::getYear, Collectors.toList())))
-					.entrySet().stream()
+					.entrySet()
+					.stream()
 					.filter(entry -> entry.getValue().size() > 1)
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 		}
@@ -115,17 +96,12 @@ public class MovieServiceImpl implements MovieService {
 	}
 
 	private List<WinnerDto> getFirstWinners(ArrayList<WinnerDto> winnersList) {
-		int interval = winnersList.stream().findFirst().get().getInterval();
-		return winnersList.stream().filter(winner -> winner.getInterval() == interval)
+		int interval = winnersList.stream()
+				.findFirst().get().getInterval();
+		return winnersList.stream()
+				.filter(winner -> winner.getInterval() == interval)
 				.sorted(Comparator.comparing(WinnerDto::getPreviousWin))
 				.collect(Collectors.toList());
-	}
-
-	private List<WinnerDto> limitWinners(ArrayList<WinnerDto> winnersList) {
-		winnersList.sort(Comparator.comparing(WinnerDto::getInterval));
-		List<WinnerDto> winnersLimited = winnersList.subList(0, QTD_WINNERS);
-		winnersLimited.sort(Comparator.comparing(WinnerDto::getPreviousWin));
-		return winnersLimited;
 	}
 
 }

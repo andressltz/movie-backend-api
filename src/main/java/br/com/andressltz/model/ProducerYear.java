@@ -11,8 +11,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Data
-@Table(name = "tb_movie")
-public class Movie {
+@Table(name = "tb_producer")
+public class ProducerYear {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,14 +22,8 @@ public class Movie {
 	@Column(name = "mv_year")
 	private String year;
 
-	@Column(name = "title")
-	private String title;
-
-	@Column(name = "studios")
-	private String studios;
-
-	@Column(name = "producers")
-	private String producers;
+	@Column(name = "name")
+	private String name;
 
 	@Column(name = "winner")
 	private Boolean winner;

@@ -6,18 +6,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.andressltz.dto.IntervalDto;
-import br.com.andressltz.service.MovieService;
+import br.com.andressltz.service.IntervalService;
 
 @RestController
 @RequestMapping("/intervals")
 public class IntervalController {
 
 	@Autowired
-	private MovieService movieService;
+	private IntervalService intervalService;
 
 	@GetMapping()
 	public IntervalDto getIntervals() {
-		return movieService.getIntervalWin();
+		return intervalService.getIntervalWin();
 	}
 
 }
